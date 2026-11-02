@@ -1,55 +1,80 @@
-// Pega os elementos do HTML que vamos usar
+// Pegando os elementos do HTML
 const taskInput = document.getElementById('task-input');
 const addBtn = document.getElementById('add-btn');
 const taskList = document.getElementById('task-list');
 
-// Função principal que adiciona a tarefa
+// Carrega as tarefas salvas no navegador ou cria uma lista vazia
+let tasks = JSON.parse(localStorage.getItem('tarefas_salvas')) || [];
+
+// Função que desenha a lista na tela
+function renderTasks() {
+    taskList.innerHTML = ""; // Limpa a tela antes de desenhar
+    
+    tasks.forEach((task, index) => {
+        const li = document.createElement('li');
+        li.innerText = task.texto;
+
+        // Se a tarefa estiver concluída, aplica o risco
+        if (task.concluida) {
+            li.classList.add('completed');
+        }
+
+        // Clicar no texto marca/desmarca como concluída
+        li.addEventListener('click', () => {
+            tasks[index].concluida = !tasks[index].concluida;
+            salvarNoNavegador();
+            renderTasks();
+        });
+
+        // Botão de deletar
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerText = "X";
+        deleteBtn.style.backgroundColor = "#da3633";
+        deleteBtn.style.padding = "5px 10px";
+        
+        // Clicar no X apaga a tarefa
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            tasks.splice(index, 1); // Remove do array
+            salvarNoNavegador();
+            renderTasks();
+        });
+
+        li.appendChild(deleteBtn);
+        taskList.appendChild(li);
+    });
+}
+
+// Salva o array no localStorage em formato de texto (JSON)
+function salvarNoNavegador() {
+    localStorage.setItem('tarefas_salvas', JSON.stringify(tasks));
+}
+
+// Função de adicionar nova tarefa
 function addTask() {
-    const taskText = taskInput.value.trim(); // Pega o texto e tira espaços vazios
+    const taskText = taskInput.value.trim();
     
     if (taskText === "") {
         alert("Por favor, digite uma tarefa!");
         return;
     }
 
-    // Cria o elemento da lista (li)
-    const li = document.createElement('li');
-    li.innerText = taskText;
+    // Adiciona ao array como um objeto
+    tasks.push({ texto: taskText, concluida: false });
+    salvarNoNavegador();
+    renderTasks();
 
-    // Evento: ao clicar no texto, ele risca a tarefa (completa)
-    li.addEventListener('click', () => {
-        li.classList.toggle('completed');
-    });
-
-    // Cria o botão de deletar
-    const deleteBtn = document.createElement('button');
-    deleteBtn.innerText = "X";
-    deleteBtn.style.backgroundColor = "#da3633"; // Cor vermelha
-    deleteBtn.style.padding = "5px 10px";
-    
-    // Evento: ao clicar no botão X, apaga a tarefa
-    deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Impede que o clique apague e marque como concluído ao mesmo tempo
-        li.remove();
-    });
-
-    // Adiciona o botão vermelho dentro da tarefa
-    li.appendChild(deleteBtn);
-    
-    // Adiciona a tarefa na lista do HTML
-    taskList.appendChild(li);
-
-    // Limpa o campo de texto para a próxima tarefa
     taskInput.value = "";
-    taskInput.focus(); // Coloca o cursor de volta no input
+    taskInput.focus();
 }
 
-// Escuta o clique do botão "Adicionar"
+// Eventos de clique e teclado
 addBtn.addEventListener('click', addTask);
-
-// Escuta a tecla "Enter" para também adicionar
 taskInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         addTask();
     }
 });
+
+// Roda a função assim que a página carrega para mostrar as tarefas salvas!
+renderTasks();
